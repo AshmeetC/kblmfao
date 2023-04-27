@@ -1,16 +1,17 @@
 package application;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Scanner;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Scanner;
-
 public class Board {
+	private static Board board;
 	private BoardGraph boardGraph;
 	private int[] boardNums;
     private HexNode root;
@@ -18,24 +19,31 @@ public class Board {
     private GameObject settlementObj;
     private int settlementsPlacedSinceReset;
     private ArrayList<HexNode> settlementQueue;
-
-	private ArrayList<HexNode> current;
+    private String[][] terrainMatrix;
+    private ArrayList<TerrainCard> terrainCards;
+    private GameObject terrainCardObj;
+    private TerrainCard activeCard;
     
     public Board(){
     	boardNums = new int[4];
     	buttonMatrix = new HexButton[20][20];
     	settlementsPlacedSinceReset = 0;
     	settlementQueue = new ArrayList<>();
-		current = new ArrayList<>();
+    	terrainCards = new ArrayList<>();
+    	terrainCardObj = new GameObject();
+    	terrainCardObj.setBounds(120, 600, 117, 180);
+    	
         setBoardNums();
         displayBoard(354, 14, 1212, 1041);
         
     	HashMap<Integer, String[][]> terrainMaps = buildMap();
-        String[][] terrainMatrix = buildMatrix(terrainMaps);
+        terrainMatrix = buildMatrix(terrainMaps);
         
         boardGraph = new BoardGraph(terrainMatrix);
         
         addHexButtons();
+        createTerrainCards();
+        drawTerrainCard();
     }
     
     private void setBoardNums() {
@@ -82,7 +90,13 @@ public class Board {
         	
         	for(int r = 0; r < tempArr.length; r++) {
         		for(int c = 0; c < tempArr[0].length; c++) {
-        			tempArr[r][c] = sc.next();
+        			//tempArr[r][c] = sc.next();
+        			String token = sc.next();
+        			if(token.equals("s")) {
+        				tempArr[r][c] = sc.next();
+        			} else {
+        				tempArr[r][c] = token;
+        			}
         		}
         	}
         	
@@ -90,13 +104,8 @@ public class Board {
         }
     	return tempMap;
     }
-
-	/**
-	 * Sowa qhRAFdsaf
-	 * @param terrainMaps mPA RWRajN
-	 * @return THING
-	 */
-	private String[][] buildMatrix(HashMap<Integer, String[][]> terrainMaps) {
+    
+    private String[][] buildMatrix(HashMap<Integer, String[][]> terrainMaps) {
     	String[][] tempMatrix = new String[20][20];
     	
     	for(int r = 0; r < tempMatrix.length; r++) {
@@ -124,18 +133,25 @@ public class Board {
     	
     	for(int r = 0; r < 20; r++) {
     		for(int c = 0; c < 20; c++) {
-    			createHexButton(hexMatrix, r, c);
+    			if(terrainMatrix[r][c].length() < 2) {
+    				createHexButton(hexMatrix, r, c, 384, 48, 1152, 973.75);
+    			} else {
+    				createActionTile(hexMatrix, r, c, 384, 48, 1152, 973.75);
+    			}
     		}
     	}
-		//System.out.println(hexMatrix[0][0].toString());
     }
     
-    private HexButton createHexButton(HexNode[][] hexMatrix, int r, int c) {
+    private HexButton createHexButton(HexNode[][] hexMatrix, int r, int c, double xOffset, double yOffset, double width, double height) {
     	HexButton button = new HexButton(33, hexMatrix[r][c]);
+    	HexNode[][] matrix = boardGraph.getMatrix();
+    	matrix[r][c].setHexButton(button);
 		
-		button.setBounds(384 + 59 * c + c / 10 * 1.5 + r % 2 * 29.5, 48 + r * 51.25);
+    	double hexWidth = (width - 31 * (width / 1152)) / 19;
+    	double hexHeight = height / 19;
+		button.setBounds(xOffset + hexWidth * c + c / 10 * (1.5 * (width / 1152)) + r % 2 * (29.5 * (width / 1152)), yOffset + r * hexHeight);
 		buttonMatrix[r][c] = button;
-		button.setOpacity(0);
+		//button.setOpacity(0);
 		
 		button.setOnMouseClicked(e -> {
 			HexNode hexNode = button.getHexNode();
@@ -146,7 +162,7 @@ public class Board {
 				settlementObj.setEffect(new DropShadow(10, Color.BLACK));
 			}
 			
-			if(hexNode.canPlaceSettlement() && settlementsPlacedSinceReset < 3 && !hexNode.getTerrain().equals("m") && !hexNode.getTerrain().equals("w")) {
+			if(!hexNode.hasSettlement() && settlementsPlacedSinceReset < 3) {
 				TurnHandler turnHandler = TurnHandler.get();
 				Player player = turnHandler.getCurrentPlayer();
 				Image settlement = player.getSettlementImg();
@@ -155,38 +171,65 @@ public class Board {
 				hexNode.addSettlement();
 				settlementsPlacedSinceReset++;
 				settlementQueue.add(hexNode);
-				current.add(hexNode);
-				System.out.println(hexMatrix[0][0].toPlayerString());
-			} else if(hexNode.hasSettlement() && !hexNode.isConfirmed()) {
+				
+				if(activeCard.isActive()) {
+					activeCard.deactivateCard();
+					activeCard.activateCard();
+				}
+			} else if(hexNode.hasSettlement()) {    					
 				settlementObj.removeImgAt(button.getLayoutX() - 35, button.getLayoutY() - 20, 73.6, 46);
 				hexNode.removeSettlement();
 				settlementsPlacedSinceReset--;
 				settlementQueue.remove(hexNode);
-				current.remove(hexNode);
+				
+				if(activeCard.isActive()) {
+					activeCard.deactivateCard();
+					activeCard.activateCard();
+				}
 			}
 		});
+		//button.setDisable(true);
+		button.setVisible(false);
 		
 		return button;
     }
     
-    public int getSettlementsPlacedSinceReset() {
-    	return settlementsPlacedSinceReset;
+    private void createActionTile(HexNode[][] hexMatrix, int r, int c, double xOffset, double yOffset, double width, double height) {
+    	
     }
     
+    private void createTerrainCards() {
+    	for(int i = 0; i < 25; i++) {
+    		terrainCards.add(new TerrainCard(i % 5));
+    	}
+    	Collections.shuffle(terrainCards);
+    }
+    
+    public void drawTerrainCard() {
+    	TerrainCard card = terrainCards.remove(terrainCards.size() - 1);
+    	
+    	terrainCardObj.setImage(card.getImage());
+    	activeCard = card;
+    }
+    
+    public HexNode getRoot(){return root;}
+    public GameObject getSettlementObj() {return settlementObj;}
+    public int getSettlementsPlacedSinceReset() {return settlementsPlacedSinceReset;}
+    public ArrayList<HexNode> getSettlementQueue() {return settlementQueue;}
+    public HexButton[][] getButtonMatrix() {return buttonMatrix;}
+    public TerrainCard getActiveCard() {return activeCard;}
+    
     public void resetSettlementsPlaced() {
+    	settlementQueue.clear();
     	settlementsPlacedSinceReset = 0;
     }
     
-    public HexNode getRoot(){
-        return root;
+    public static Board get() {
+    	if(Board.board == null) {
+    		Board.board = new Board();
+    	}
+    	return Board.board;
     }
-
-	public void confirmPlacements(){
-		for(int i =0;i<current.size(); i++){
-			current.get(i).setConfirmed();
-		}
-		current = new ArrayList<>();
-	}
 }
 
 

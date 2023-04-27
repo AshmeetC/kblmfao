@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import javafx.scene.Node;
-import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
 public class ColorSelection {
@@ -18,18 +17,17 @@ public class ColorSelection {
 	
 	public ColorSelection() {
 		//setStyle("-fx-background-color: " + Color.COLOR.getValue());
-		Window window = Window.get();
-		double xMultiplier = window.getWidth() / 1920.0;
-		double yMultiplier = window.getHeight() / 1080.0;
-		Image background = new Image(getClass().getResourceAsStream("/images/colorSelectBackground.jpeg"));
-		GameObject backgroundObj = new GameObject(background, 0, 0, 1920 * xMultiplier, 1080 * yMultiplier, 0);
 		selectionObjects = new HashSet<>();
 		playerColors = new String[4];
+		for(int i = 0; i < 4; i++) {
+			playerColors[i] = "";
+		}
+		
 		mainButtons = new GameButton[4];
 		nextButton = new GameButton("[Use random colors]");
 		
 		for(int i = 0; i < 4; i++) {			
-			GameButton button = new GameButton("Player " + (i+1) + "\n[Click to select color]");
+			GameButton button = new GameButton("[Click to select color]");
 			button.setBounds(224 + 424 * i, 440, 200, 200);
 			
 			button.setOnAction(e -> {
@@ -45,15 +43,15 @@ public class ColorSelection {
 		nextButton.setBounds(1670, 980, 200, 50);
 		
 		nextButton.setOnAction(e -> {
-			for(int i = 0; i < 4; i++) {
-				String[] sortedArr = playerColors.clone();
-				Arrays.sort(sortedArr);
-				
-				if(playerColors[i] == null) {
-					String newColor = settlementColors[(int)(Math.random() * 8)];
+			if(!nextButton.getText().equals("[Next]")) {
+				for(int i = 0; i < 4; i++) {				
+					if(playerColors[i] == "") {
+						String newColor = settlementColors[(int)(Math.random() * 8)];
 					
-					while(Arrays.binarySearch(sortedArr, newColor) < 0) {
-						newColor = settlementColors[(int)(Math.random() * 8)];
+						while(Arrays.asList(playerColors).contains(newColor)) {
+							newColor = settlementColors[(int)(Math.random() * 8)];
+						}
+						playerColors[i] = newColor;
 					}
 				}
 			}
@@ -63,8 +61,8 @@ public class ColorSelection {
 			ObjectHandler objectHandler = ObjectHandler.get();
 			objectHandler.clear();
 			
-			Board board = new Board();
-			new GUI(board);
+			Board.get();
+			GUI.get();
 		});
 	}
 	

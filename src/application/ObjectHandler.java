@@ -14,9 +14,48 @@ public class ObjectHandler {
 	private static TreeMap<Integer, ArrayList<GameObject>> gameObjects;
 	private static HashSet<GameButton> buttonList;
 	private static HashSet<HexButton> hexList;
+	private static HashSet<Node> miscList;
 	private static ObjectHandler objectHandler;
 	
-	public void add(GameObject imgView) {
+	public ObjectHandler() {
+		gameObjects = new TreeMap<>();
+		buttonList = new HashSet<>();
+		hexList = new HashSet<>();
+		miscList = new HashSet<>();
+	}
+	
+	public TreeMap<Integer, ArrayList<GameObject>> getGameObjects() {return gameObjects;}
+	
+	public void add(Node node) {
+		switch(node.getClass().toString()) {
+		case "class application.GameObject":
+			GameObject obj = (GameObject)node;
+			add(obj);
+			
+		    break;
+		case "class application.GameButton":
+			GameButton button = (GameButton)node;
+			add(button);
+			
+			break;
+		case "class application.HexButton":
+			HexButton hexButton = (HexButton)node;
+			add(hexButton);
+			
+			break;
+		default:
+			miscList.add(node);
+			
+			Window window = Window.get();
+		    Group root = window.getRoot();
+		    
+		    root.getChildren().add(node);
+			
+			break;
+		}
+	}
+	
+	private void add(GameObject imgView) {
 		int sortingLayer = imgView.getSortingLayer();
 		
 		if(gameObjects.get(sortingLayer) == null) {
@@ -39,11 +78,9 @@ public class ObjectHandler {
         while(iter.hasNext()) {
             Entry<Integer, ArrayList<GameObject>> entry = iter.next();
             for(GameObject img : entry.getValue()) {
-            	//System.out.println("Root Children: " + root.getChildren() + " Next Added GameObject: " + img);
             	root.getChildren().add(img);
             }
         }
-        //System.out.println();
         
         Iterator<GameButton> iter2 = buttonList.iterator();
         while(iter2.hasNext()) {
@@ -58,9 +95,16 @@ public class ObjectHandler {
         	
         	root.getChildren().add(button);
         }
+        
+        Iterator<Node> iter4 = miscList.iterator();
+        while(iter4.hasNext()) {
+        	Node node = iter4.next();
+        	
+        	root.getChildren().add(node);
+        }
 	}
 	
-	public void add(GameButton button) {
+	private void add(GameButton button) {
 		buttonList.add(button);
 		
 		Window window = Window.get();
@@ -69,7 +113,7 @@ public class ObjectHandler {
 	    root.getChildren().add(button);
 	}
 	
-	public void add(HexButton button) {
+	private void add(HexButton button) {
 		hexList.add(button);
 		
 		Window window = Window.get();
@@ -145,16 +189,6 @@ public class ObjectHandler {
 	    Group root = window.getRoot();
 	    
 	    root.getChildren().remove(button);
-	}
-	
-	public TreeMap<Integer, ArrayList<GameObject>> getObjects() {
-		return gameObjects;
-	}
-	
-	public ObjectHandler() {
-		gameObjects = new TreeMap<>();
-		buttonList = new HashSet<>();
-		hexList = new HashSet<>();
 	}
 	
 	public static ObjectHandler get() {
