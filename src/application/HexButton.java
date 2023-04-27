@@ -7,11 +7,13 @@ import javafx.scene.shape.StrokeType;
 import javafx.scene.transform.Rotate;
 
 public class HexButton extends Polygon {
+	private boolean hasSettlement;
 	private HexNode hexNode;
     private double radianStep = (2 * Math.PI) / 6;
 
     public HexButton(double radius, HexNode hexNode) {
     	//setOnMouseClicked(e -> {});
+    	hasSettlement = false;
     	this.hexNode = hexNode;
         buildHexagon(radius);
         
@@ -21,7 +23,7 @@ public class HexButton extends Polygon {
 
     private void buildHexagon(double radius) {
         setFill(Color.BLACK);
-        //setStroke(Color.WHITESMOKE);
+        setStroke(Color.WHITESMOKE);
         //setEffect(new DropShadow(10, Color.BLACK));
         setStrokeWidth(5);
         //setStrokeType(StrokeType.INSIDE);

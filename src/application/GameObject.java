@@ -47,7 +47,7 @@ public class GameObject extends ImageView {
 		objectHandler.add(this);
 	}
 	
-	public void setImage(Image image, double x, double y, double width, double height) {
+	public void setImg(Image image, double x, double y, double width, double height) {
 		setImage(image);
 		setBounds(x, y, width, height);
 		
@@ -115,31 +115,7 @@ public class GameObject extends ImageView {
 		}
 		
 		ImageView imgView = imgList.remove(0);
-		setImage(imgView.getImage(), imgView.getX(), imgView.getY(), imgView.getFitWidth(), imgView.getFitHeight());
-		
-		for(ImageView img : imgList) {
-			add(img.getImage(), img.getX(), img.getY(), img.getFitWidth(), img.getFitHeight());
-		}
-	}
-	
-	public void removePreviousImages(int x) {
-		if(imageList.size() == 0 || x == 0) {
-			return;
-		}
-		
-		for(int i = 0; i < x; i++) {
-			if(imageList.size() != 0) {
-				imageList.remove(imageList.size() - 1);
-			}
-		}
-		@SuppressWarnings("unchecked")
-		ArrayList<ImageView> imgList = (ArrayList<ImageView>)imageList.clone();
-		if(imgList.size() == 0) {
-			imgList.add(new ImageView(nullImage));
-		}
-		
-		ImageView imgView = imgList.remove(0);
-		setImage(imgView.getImage(), imgView.getX(), imgView.getY(), imgView.getFitWidth(), imgView.getFitHeight());
+		setImg(imgView.getImage(), imgView.getX(), imgView.getY(), imgView.getFitWidth(), imgView.getFitHeight());
 		
 		for(ImageView img : imgList) {
 			add(img.getImage(), img.getX(), img.getY(), img.getFitWidth(), img.getFitHeight());
@@ -150,7 +126,7 @@ public class GameObject extends ImageView {
 	
 	public void setSortingLayer(int sortingLayer) {
 		ObjectHandler objectHandler = ObjectHandler.get();
-		TreeMap<Integer, ArrayList<GameObject>> gameObjects = objectHandler.getGameObjects();
+		TreeMap<Integer, ArrayList<GameObject>> gameObjects = objectHandler.getObjects();
 		
 		ArrayList<GameObject> objList1 = gameObjects.get(this.sortingLayer);
 		objList1.remove(this);
